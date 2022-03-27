@@ -1,0 +1,205 @@
+%++++++++++++++++++++++++++++++++++++++++
+% Don't modify this section unless you know what you're doing!
+\documentclass[letterpaper,11pt]{article}
+\usepackage{tabularx} % extra features for tabular environment
+\usepackage{amsmath}  % improve math presentation
+\usepackage{graphicx} % takes care of graphic including machinery
+\usepackage[margin=1in,letterpaper]{geometry} % decreases margins
+
+\usepackage[final]{hyperref} % adds hyper links inside the generated pdf file
+\hypersetup{
+	colorlinks=true,       % false: boxed links; true: colored links
+	linkcolor=blue        % color of internal links
+	   }
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{
+  frame=tb,
+  language=Java,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
+%+++++++++++++++++++++++++++++++++++++++
+\begin{document}
+\title{%
+  Bike sharing previsions through Bayesian Networks \\
+  \vspace{0.5cm}
+  \large Fundamentals of Artificial Intelligence 
+    Module 3}
+\author{Pietro Epis, Michele Milesi, Anna Valanzano}
+\maketitle
+
+\begin{abstract}
+
+\end{abstract}
+
+\section{London bike sharing dataset}
+We chose a dataset of bike sharing in London. For further references see \href{https://www.kaggle.com/datasets/hmavrodiev/london-bike-sharing-dataset}{London bike sharing dataset}
+
+\begin{table}[h]
+\begin{center}
+
+\label{table2} 
+\begin{tabular}{cccc} 
+\hline
+\multicolumn{1}{c}{Variables} & \multicolumn{1}{c}{Type} & \multicolumn{1}{c}{Cardinality}& \multicolumn{1}{c}{Domain }\\
+\hline
+cnt &   integer & 8 & 0, 1, 2, 3, 4, 5, 6, 7 \\
+temperature &   integer & 4 & 0, 1, 2, 3\\
+temperature1\_feels & integer & 4   & 0, 1, 2, 3\\
+wind & string & 2 & "yes", "no"\\
+hum & integer & 4 & 0, 1, 2, 3 \\
+weather\_code & string & 8 & 1, 2 , 3, 4, 7, 10, 26, 94\\
+time & integer & 2 & "morning", "afternoon", "evening", "night" \\
+is\_holiday  & string &2 & yes, no\\
+is\_weekend  & string &2 & yes, no\\\\
+
+
+\hline
+\end{tabular}
+\caption{Variables and domains of the dataset}
+\end{center}
+\end{table}
+
+
+
+\begin{table}[!htb]
+    	\begin{minipage}{.5\linewidth}
+      \centering
+        \begin{tabular}{cc} 
+\hline
+\multicolumn{1}{c}{Season} & \multicolumn{1}{c}{Values} \\
+\hline
+1 &   Clear \\
+2 &  scattered clouds  \\
+3 & Broken clouds\\
+4 &Cloudy\\
+
+7 &   Rain \\
+10 &  thunderstorm  \\
+26 & snowfall\\
+94 &Freezing Fog\\
+\hline
+\end{tabular}
+    \end{minipage}%
+    \begin{minipage}{.5\linewidth}
+      \centering
+        \caption{}
+       \begin{tabular}{cc} 
+\hline
+\multicolumn{1}{c}{Season} & \multicolumn{1}{c}{Values} \\
+\hline
+spring &   0 \\
+summer &  1  \\
+fall & 2\\
+winter &3\\
+\hline
+\end{tabular}
+\caption{}
+ \end{minipage} 
+\end{table}
+
+Description of the variables:
+
+
+\begin{itemize}
+\item cnt: count of a new bike shares
+\item temperature: real temperature in C
+\item temperature\_feels:  temperature in C "feels like"
+\item wind
+\item hum: humidity in percentage
+\item time: 
+\item is\_holiday 
+\item is\_weekend 
+\item weather\_code: category of the weather
+\end{itemize}
+
+
+
+
+
+\section{Construction of the Bayesian Network}
+The Bayesian Network is a data structure which represents the dependencies among the variables: it represents the full joint probability distribution in a compact way. \\ To define the Network we used the Python library \texttt{pgmpy}: we used the method \texttt{BayesianNetwork} to define the network, and the methods \texttt{add\_nodes\_from} and \texttt{add\_edge} to add respectively nodes and edges. We defined the Conditional Probability tables trough the method  \texttt{TabularCPD}.
+
+basing on our intuition about the dataset.
+
+%\begin{figure}[ht] 
+ %       \centering \includegraphics[width=.9\columnwidth]{}
+ %       \caption{\label{fig}
+ %       }
+%\end{figure}
+
+
+
+\section{Exact Inference}
+
+The basic task for any probabilistic inference system is to compute the posterior probability distribution for a set of query variables, given some observed event, that is some assignment of values to a set of evidence variables. Given a set of evidence variables E and a query variable X a typical query asks for the posterior probability distribution 
+\begin{equation}
+P(X| e) = \frac{P(X, e)}{P(e)} = \alpha P(X| e) 
+\end{equation}
+It turns out that inference is a challenging task. For many probabilities of interest, it is NP-hard to answer any of these questions exactly. However, the Variable Elimination Algorithm allows a more efficient computation, basing on the simple idea of performing calculations once and saving results for later use.\\ To exploit this efficient algorithm we use the \texttt{pgmpy} method \texttt{VariableElimination}. 
+
+\begin{lstlisting}
+from pgmpy.inference import VariableElimination
+exact_inference = VariableElimination(network)
+\end{lstlisting}
+
+\subsection*{Queries}
+After instantiating the object \texttt{exact\_inference} we can use it to answer queries. If we ask ourselves what number of bikes will be rented if the temperature is low and it's windy:
+\begin{lstlisting}
+exact_inference.query(variables=["cnt"], 
+						evidence = {"temperature": 0, "wind": 1, "weather": 4, "season": 3})
+\end{lstlisting}
+
+\section{Approximate Inference}
+Unfortunately, the time complexity of exact inference is exponential in the number of variables: given the intractability of exact inference in large and multiple connected networks, it is essential to consider approximate methods. In this report we examined two Direct Sampling methods: the Rejection Sampling and the Likelihood weighting algorithm. \\ To implement approximate inference we the \texttt{pgmpy} method \texttt{BayesianModelSampling}. 
+\begin{lstlisting}
+from pgmpy.sampling import BayesianModelSampling
+inference = BayesianModelSampling(network)
+\end{lstlisting}
+
+
+\subsection{Rejection Sampling}
+To compute $P(X| e)$ in an approximate way we generate samples and reject those samples that are not consistent with the evidence \textit{e}. After generating all samples that matches the evidence, the algorithm compute the approximation of $P(X| e)$ as the ration between the number of times in which X occurs and the total number of samples:
+\begin{equation}
+\widehat{P}(X| e)= \frac{N_{PS}(X, e)}{N_{PS}(e)} \approx \frac{P(X, e)}{P(e)} = P(X| e)
+\end{equation}
+If the probability of the evidence $P(e)$ is small, Rejection Sampling can be very expensive, because it generates a lot of samples and rejects most of them.
+\begin{lstlisting}
+samples = inference.rejection_sample(evidence = evidence, size = size, show_progress = False)
+\end{lstlisting}
+
+\subsection{Likelihood Weighting}
+
+Likelihood weighting avoids the inefficiency of rejection sampling by generating only events that are consistent with the evidence \textit{e}.
+Each event is weighted by the likelihood that the event accords to evidence : each event in which the evidence appears unlikely should be given less weight \footnote{Artificial Intelligence. A Modern Approach, by Stuart Russel and Peter
+Norvig,3rd Ed.}. \\To compute $P(X| e)$ in an approximate way it sums the weights of samples in which X occurs and divide by the sum of all the weights.
+
+\begin{lstlisting}
+samples = inference.likelihood_weighted_sample(evidence = evidence, size = size, show_progress = False)
+\end{lstlisting}
+
+%\begin{figure}[ht] 
+ %       \centering \includegraphics[width=.9\columnwidth]{}
+ %       \caption{\label{fig}
+ %       }
+%\end{figure}
+
+\section{Conclusion}
+\end{document}
