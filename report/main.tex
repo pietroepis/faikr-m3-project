@@ -97,15 +97,18 @@ season & string & 4 & \{``spring'', ``summer'', ``fall'', ``winter''\}\\
 \label{tab:code}
 \end{table}
 
-
 \section{Construction of the Bayesian Network}
 
 To define the Bayesian Network, that is a data structure 
 representing the dependencies among the variables,  we used the Python library \texttt{pgmpy} and 
 in particular the class \texttt{BayesianNetwork}. Then, we used the methods \texttt{add\_nodes\_from}
- and \texttt{add\_edge} to add respectively nodes and edges and,  basing on our intuitions about the dataset,
-  we defined the Conditional Probability 
- tables trough the method \texttt{TabularCPD}.
+and \texttt{add\_edge} to add respectively nodes and edges and,  basing on our intuitions about the dataset.
+For instance, we deemed it appropriate to represent the dependency of the variable \texttt{temperature\_feels}
+from the variables \texttt{temperature}, \texttt{hum} and \texttt{wind}, indeed the perceived temperature
+is likely to increase in absence of wind and whether humidity is high. Furthermore, the edge from \texttt{time}
+to \texttt{cnt} formalizes the idea that the number of rented bikes is more likely to be high during the day
+rather than during night. The other edges have been introduced according to similar reasonings.\\
+We defined the Conditional Probability tables trough the method \texttt{TabularCPD}.
 We reported the resulting Network structure in Figure~\ref{fig:net}.
 
 \begin{wrapfloat}{figure}{R}{0pt}
@@ -116,9 +119,11 @@ We reported the resulting Network structure in Figure~\ref{fig:net}.
 
 \paragraph{Generation of CPDs}
 Since it wouldn't have been feasible to manually define the CPD Tables for variables with large
-domain, we developed a function devoted to generate the table of conditioned probabilities associated
-to a specific variable, according to its dependencies, represented by its parents.
+domain or lots of dependencies, we developed a function devoted to generate the table of 
+conditional probabilities associated to a specific variable, according to its parents 
+(that represent its dependencies) and their cardinality.
 
+\newpage
 \section{Exact Inference}
 
 The basic task for any probabilistic inference system is to compute the posterior
@@ -163,8 +168,6 @@ Given the intractability of exact inference in large and multiple connected netw
 it turns out essential to consider approximate methods. In this report we examined two Direct
 Sampling methods: the Rejection Sampling and the Likelihood weighting algorithm. 
 To implement approximate inference we used the \texttt{pgmpy} class \texttt{BayesianModelSampling}. 
-
-
 
 \subsection{Rejection Sampling}
 \label{sec:rs}
@@ -217,13 +220,12 @@ become closer and closer to the exact ones. In fact, as we can see in
 Figure~\ref{fig:error}, increasing the number of samples
 the absolute and relative error become closer and closer to zero.
 
-\begin{figure}[p]
+\begin{figure}[h]
   \centering
   {\includegraphics[width=.45\textwidth]{ab_err.png}} \quad
   {\includegraphics[width=.45\textwidth]{rel_err.png}} \\
   \caption{Absolute and Relative errors for the first query}
   \label{fig:error}
-  \vspace{128in}
   \end{figure}
 
 
